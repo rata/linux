@@ -197,6 +197,17 @@ static int acpi_battery_handle_discharging(struct acpi_battery *battery)
 	return POWER_SUPPLY_STATUS_DISCHARGING;
 }
 
+static int acpi_battery_is_not_charging(struct acpi_battery *battery)
+{
+	/* If we are on AC power and the current going out of the battery is 0,
+	 * we are not charging.
+	 */
+	if (power_supply_is_system_supplied() && battery->rate_now == 0)
+		return 1;
+
+	return 0;
+}
+
 static int acpi_battery_get_property(struct power_supply *psy,
 				     enum power_supply_property psp,
 				     union power_supply_propval *val)
@@ -217,6 +228,8 @@ static int acpi_battery_get_property(struct power_supply *psy,
 			val->intval = POWER_SUPPLY_STATUS_CHARGING;
 		else if (acpi_battery_is_charged(battery))
 			val->intval = POWER_SUPPLY_STATUS_FULL;
+		else if (acpi_battery_is_not_charging(battery))
+			val->intval = POWER_SUPPLY_STATUS_NOT_CHARGING;
 		else
 			val->intval = POWER_SUPPLY_STATUS_UNKNOWN;
 		break;
